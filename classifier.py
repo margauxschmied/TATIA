@@ -40,6 +40,10 @@ from sklearn import metrics
 from sklearn.naive_bayes import CategoricalNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, ComplementNB, BernoulliNB, CategoricalNB
+from sklearn.metrics import confusion_matrix
+from sklearn.utils import shuffle
+
+
 
 stopwords_list = stopwords.words('english')
 stopwords_list += list(string.punctuation)
@@ -84,29 +88,31 @@ def clean_text(text):
 classifier = None
 vectorizer = None
 
-def train(df):
+def train(df, test_size, train_size):
     global classifier, vectorizer
     print("Training...")
-    sentences = df["description"].values
+    sample = 5000
+    sentences = shuffle(df["description"].values, n_samples=sample)
     vectorizer = CountVectorizer(min_df=0, lowercase=False)
     vectorizer.fit(sentences)
     vectorizer.transform(sentences)
 
-    X = df.drop("Unnamed: 0", axis=1)
-    X = X.drop("genre", axis=1).drop("id", axis=1).drop("title", axis=1)
-    Y = df["genre"].values
+    X = df.drop("Unnamed: 0", axis=1).drop("genre", axis=1).drop("id", axis=1).drop("title", axis=1)
+    X = shuffle(X, n_samples=sample)
+    Y = shuffle(df["genre"], n_samples=sample)
 
 
-    sentences_train, sentences_test, y_train, y_test = train_test_split(sentences, Y, test_size=1/3, train_size=2/3)#, random_state=50
+    sentences_train, sentences_test, y_train, y_test = train_test_split(sentences, Y, test_size=test_size, train_size=train_size)#, random_state=50
     vectorizer = CountVectorizer()
     vectorizer.fit(sentences_train)
 
     X_train = vectorizer.transform(sentences_train)
     X_test  = vectorizer.transform(sentences_test)
 
-    # classifier = LogisticRegression().fit(X_train, y_train)
-    # # predicted = classifier.predict(X_test)
-    # # y_err = Y - predicted
+    classifier = SVC().fit(X_train, y_train)
+
+    # predicted = classifier.predict(X_test)
+    # y_err = Y - predicted
     # linear_regression = LinearRegression().fit(X_train, y_train)
 
     # X_ensemble = pd.DataFrame(
@@ -123,9 +129,18 @@ def train(df):
     # classifier = CategoricalNB().fit(X_train, y_train)
 
     # classifier = MLPClassifier(hidden_layer_sizes=(100,), activation="relu", solver="adam")
-    classifier = SVC(kernel="linear", C=1E10)
-    classifier.fit(X_train, y_train)
+    # classifier = SVC(kernel="linear", C=1E10)
+    # classifier = LogisticRegression()
+    # classifier = OneVsRestClassifier(classifier)
+    # classifier.fit(X_train, y_train)
     predict = classifier.predict(X_test)
+
+    labels = df["genre"].unique()
+    # cm = confusion_matrix(y_test, predict, labels=labels)
+    metrics.ConfusionMatrixDisplay.from_estimator(classifier, X_test, y_test, labels=labels, include_values=False, xticks_rotation='vertical')
+    plt.tight_layout()
+    plt.savefig('confusion_matrix.png', dpi=500)
+
     score = classifier.score(X_test, y_test)
     print(f"Trained with {score:.3f}% accuracy")
     metrics.accuracy_score(predict, y_test)
@@ -144,7 +159,7 @@ def accuracy(df):
             error += 1
 
     print(f"Error : {(error/length_genre)*100:.3f}%")
-    
+
 
 
 def predict(file_path, output, df_trained, df_to_predict):
@@ -183,7 +198,7 @@ def keras(df):
 
     sentences_train, sentences_test, y_train, y_test = train_test_split(sentences_labels, Y, test_size=1/3)#, random_state=50
 
-    
+
     tokenizer = Tokenizer(num_words=5000)
     tokenizer.fit_on_texts(sentences_train)
 
@@ -205,8 +220,8 @@ def keras(df):
     embedding_dim = 50
 
     model = Sequential()
-    model.add(layers.Embedding(input_dim=vocab_size, 
-                            output_dim=embedding_dim, 
+    model.add(layers.Embedding(input_dim=vocab_size,
+                            output_dim=embedding_dim,
                             input_length=maxlen))
     model.add(layers.Flatten())
     model.add(layers.Dense(10, activation='relu'))
@@ -215,7 +230,7 @@ def keras(df):
                 loss='binary_crossentropy',
                 metrics=['accuracy'])
     model.summary()
-    
+
 
 
 if __name__ == "__main__":
@@ -224,7 +239,7 @@ if __name__ == "__main__":
     #keras(df_trained_data)
     df=convert_string_to_dataset_prediction("les tuches 4", "Twenty-five years after the original series of murders in Woodsboro, a new killer emerges, and Sidney Prescott must return to uncover the truth.", "horror")
     df_to_predict = pd.read_csv("archive/dataset_csv/test_data_solution_clean.csv")
-    score = train(df_trained_data)
+    score = train(df_trained_data, 1/3, 2/3)
     predict("archive/dataset_csv/test_data.csv", "predicted.csv", df_trained_data, df_to_predict)
     print("Accuracy:", score)
 
