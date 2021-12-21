@@ -29,7 +29,7 @@ from sklearn.metrics import confusion_matrix
 from pandas.core.dtypes.common import is_numeric_dtype
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.svm import LinearSVC
+from sklearn.svm import LinearSVC, SVC
 from keras.models import Sequential
 from keras import layers
 from keras.preprocessing.sequence import pad_sequences
@@ -97,7 +97,7 @@ def train(df):
     Y = df["genre"].values
 
 
-    sentences_train, sentences_test, y_train, y_test = train_test_split(sentences, Y, test_size=1/3)#, random_state=50
+    sentences_train, sentences_test, y_train, y_test = train_test_split(sentences, Y, test_size=1/3, train_size=2/3)#, random_state=50
     vectorizer = CountVectorizer()
     vectorizer.fit(sentences_train)
 
@@ -121,7 +121,9 @@ def train(df):
     # classifier.fit(X_train, y_train)
 
     # classifier = CategoricalNB().fit(X_train, y_train)
-    classifier = ComplementNB()
+
+    # classifier = MLPClassifier(hidden_layer_sizes=(100,), activation="relu", solver="adam")
+    classifier = SVC(kernel="linear", C=1E10)
     classifier.fit(X_train, y_train)
     predict = classifier.predict(X_test)
     score = classifier.score(X_test, y_test)
@@ -151,7 +153,7 @@ def predict(file_path, output, df_trained, df_to_predict):
         raise Exception("Not trained yet")
 
     # df_to_predict = pd.read_csv(file_path)
-
+    print("Predicting...")
     X_test_to_predict = vectorizer.transform(df_to_predict["description"])
 
 
@@ -217,12 +219,13 @@ def keras(df):
 
 
 if __name__ == "__main__":
-    df_trained_data = pd.read_csv("archive/dataset_csv/test_data_solution_clean.csv")
-    print(df_trained_data["genre"].unique())
+    df_trained_data = pd.read_csv("archive/dataset_csv/train_data_clean.csv")
+    # print(df_trained_data["genre"].unique())
     #keras(df_trained_data)
     df=convert_string_to_dataset_prediction("les tuches 4", "Twenty-five years after the original series of murders in Woodsboro, a new killer emerges, and Sidney Prescott must return to uncover the truth.", "horror")
+    df_to_predict = pd.read_csv("archive/dataset_csv/test_data_solution_clean.csv")
     score = train(df_trained_data)
-    predict("archive/dataset_csv/test_data.csv", "predicted.csv", df_trained_data, df)
+    predict("archive/dataset_csv/test_data.csv", "predicted.csv", df_trained_data, df_to_predict)
     print("Accuracy:", score)
 
 
