@@ -39,6 +39,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn import metrics
 from sklearn.naive_bayes import CategoricalNB
 from sklearn.neural_network import MLPClassifier
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, ComplementNB, BernoulliNB, CategoricalNB
 
 stopwords_list = stopwords.words('english')
 stopwords_list += list(string.punctuation)
@@ -120,7 +121,7 @@ def train(df):
     # classifier.fit(X_train, y_train)
 
     # classifier = CategoricalNB().fit(X_train, y_train)
-    classifier = LogisticRegression()
+    classifier = ComplementNB()
     classifier.fit(X_train, y_train)
     predict = classifier.predict(X_test)
     score = classifier.score(X_test, y_test)
@@ -140,7 +141,7 @@ def accuracy(df):
         if genre[i] != genre_predicted[i]:
             error += 1
 
-    print(f"Error : {(error/length_genre):.3f}%")
+    print(f"Error : {(error/length_genre)*100:.3f}%")
     
 
 
@@ -160,7 +161,7 @@ def predict(file_path, output, df_trained, df_to_predict):
     # df2 = pd.DataFrame(data={"title": df_to_predict["title"].values, "genre": df_trained["genre"], "genre_predit": classified})
     df2 = pd.DataFrame(data={"title": df_to_predict["title"].values, "genre": df_to_predict["genre"], "genre_predit": classified})
 
-    # accuracy(df2)
+    accuracy(df2)
     df2.to_csv(output)
 
 def convert_string_to_dataset_prediction(title, description, genre_attendu):
@@ -216,8 +217,8 @@ def keras(df):
 
 
 if __name__ == "__main__":
-
     df_trained_data = pd.read_csv("archive/dataset_csv/test_data_solution_clean.csv")
+    print(df_trained_data["genre"].unique())
     #keras(df_trained_data)
     df=convert_string_to_dataset_prediction("les tuches 4", "Twenty-five years after the original series of murders in Woodsboro, a new killer emerges, and Sidney Prescott must return to uncover the truth.", "horror")
     score = train(df_trained_data)
