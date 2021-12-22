@@ -1,4 +1,5 @@
 from os import error
+from keras.backend import softmax
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -43,6 +44,26 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, ComplementNB, BernoulliNB, CategoricalNB
 from sklearn.utils import shuffle
 from matplotlib import pyplot as plt
+import tensorflow as tf
+
+# Import necessary modules
+
+from sklearn.model_selection import train_test_split
+
+from sklearn.metrics import mean_squared_error
+
+from math import sqrt
+
+
+# Keras specific
+
+import keras
+
+from keras.models import Sequential
+
+from keras.layers import Dense
+
+from tensorflow.keras.utils import to_categorical
 
 
 stopwords_list = stopwords.words('english')
@@ -100,14 +121,14 @@ def train(df, test_size, train_size):
     X = X.drop("genre", axis=1).drop("id", axis=1).drop("title", axis=1)
     Y = df["genre"].values"""
 
-    sentences = shuffle(df["description"].values, n_samples=2000)
+    sentences = shuffle(df["description"].values, n_samples=5000)
     vectorizer = CountVectorizer(min_df=0, lowercase=False)
     vectorizer.fit(sentences)
     vectorizer.transform(sentences)
 
     X = df.drop("Unnamed: 0", axis=1).drop("genre", axis=1).drop("id", axis=1).drop("title", axis=1)
-    X = shuffle(X, n_samples=2000)
-    Y = shuffle(df["genre"], n_samples=2000)
+    X = shuffle(X, n_samples=5000)
+    Y = shuffle(df["genre"], n_samples=5000)
 
 
     sentences_train, sentences_test, y_train, y_test = train_test_split(sentences, Y, test_size=test_size, train_size=train_size)#, random_state=50
@@ -117,17 +138,6 @@ def train(df, test_size, train_size):
     X_train = vectorizer.transform(sentences_train)
     X_test  = vectorizer.transform(sentences_test)
 
-    # classifier = LogisticRegression().fit(X_train, y_train)
-    # # predicted = classifier.predict(X_test)
-    # # y_err = Y - predicted
-    # linear_regression = LinearRegression().fit(X_train, y_train)
-
-    # X_ensemble = pd.DataFrame(
-    #     {
-    #         "LOGISTIC": classifier.predict(X_test),
-    #         "LINEAR": linear_regression.predict(X_test)
-    #     }
-    # )
     # classifier = LinearRegression().fit(X_ensemble, y_train)
 
     # classifier = MLPClassifier(hidden_layer_sizes=(13,13,13), max_iter=300)
@@ -136,7 +146,7 @@ def train(df, test_size, train_size):
     # classifier = CategoricalNB().fit(X_train, y_train)
 
     # classifier = MLPClassifier(hidden_layer_sizes=(100,), activation="relu", solver="adam")
-    classifier = SVC(kernel="linear", C=1E10)
+    classifier = SVC()
     classifier.fit(X_train, y_train)
     predict = classifier.predict(X_test)
     score = classifier.score(X_test, y_test)
@@ -158,7 +168,7 @@ def predictError(df):
 
     print(f"Error : {(error/length_genre)*100:.3f}%")
     return (error/length_genre)*100
-    
+
 
 
 def predict(file_path, output, df_trained, df_to_predict):
@@ -183,52 +193,114 @@ def predict(file_path, output, df_trained, df_to_predict):
 def convert_string_to_dataset_prediction(title, description, genre_attendu):
     return pd.DataFrame({"title": title, "description": clean_text(description), "genre": genre_attendu}, index=[0])
 
+def create_model(optimizer='rmsprop', init='glorot_uniform'):
+	# create model
+	model = Sequential()
+	model.add(Dense(12, input_dim=8, kernel_initializer=init, activation='relu'))
+	model.add(Dense(8, kernel_initializer=init, activation='relu'))
+	model.add(Dense(1, kernel_initializer=init, activation='sigmoid'))
+	# Compile model
+	model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+	return model
 
 def keras(df):
+    from sklearn.preprocessing import StandardScaler
+    from keras.models import Sequential
+    from keras.layers import Dense
+
+
     sentences = df["description"].values
 
-    encoder = LabelEncoder()
-    sentences_labels = encoder.fit_transform(sentences)
-    encoder = OneHotEncoder(sparse=False)
-    sentences_labels = sentences_labels.reshape((54200, 1))
-    encoder.fit_transform(sentences_labels)
+    Y = np.ravel(df["genre"].values)
 
-    Y = df["genre"].values
+    X_train, X_test, y_train, y_test = train_test_split(sentences, Y, test_size=0.30, random_state=40)
 
-    sentences_train, sentences_test, y_train, y_test = train_test_split(sentences_labels, Y, test_size=1/3)#, random_state=50
 
-    
-    tokenizer = Tokenizer(num_words=5000)
-    tokenizer.fit_on_texts(sentences_train)
+    scaler = CountVectorizer().fit(X_train)
 
-    X_train = tokenizer.texts_to_sequences(sentences_train)
-    X_test = tokenizer.texts_to_sequences(sentences_test)
+    X_train = scaler.transform(X_train)
 
-    vocab_size = len(tokenizer.word_index) + 1  # Adding 1 because of reserved 0 index
-
-    print(sentences_train[2])
-    print(X_train[2])
-
-    maxlen = 100
-
-    X_train = pad_sequences(X_train, padding='post', maxlen=maxlen)
-    X_test = pad_sequences(X_test, padding='post', maxlen=maxlen)
-
-    print(X_train[0, :])
-
-    embedding_dim = 50
+    X_test = scaler.transform(X_test)
+    print(X_train.dtype)
 
     model = Sequential()
-    model.add(layers.Embedding(input_dim=vocab_size, 
-                            output_dim=embedding_dim, 
-                            input_length=maxlen))
-    model.add(layers.Flatten())
-    model.add(layers.Dense(10, activation='relu'))
-    model.add(layers.Dense(1, activation='sigmoid'))
-    model.compile(optimizer='adam',
-                loss='binary_crossentropy',
-                metrics=['accuracy'])
-    model.summary()
+
+    # model.add(Dense(8, activation='relu', input_shape=(8,)))
+
+    # model.add(Dense(8, activation='relu'))
+
+    model.add(Dense(1, activation='sigmoid'))
+
+    model.compile(loss='binary_crossentropy',
+              optimizer='sgd',
+              metrics=['accuracy'])
+
+    model.fit(X_train, y_train,epochs=4, batch_size=1, verbose=1)
+    for layer in model.layers:
+        weights = layer.get_weights()
+    from keras.utils import plot_model
+    plot_model(model, to_file='/tmp/model.png', show_shapes=True,)
+    y_pred = model.predict_classes(X_test)
+
+    score = model.evaluate(X_test, y_test,verbose=1)
+
+    print(score)
+
+
+
+
+
+    # y_train = to_categorical(np.asarray(pd.factorize(y_train)[0]))
+
+    # y_test = to_categorical(np.asarray(pd.factorize(y_test)[0]))
+
+    # # y_train = to_categorical(y_train, 2)
+    # # y_test = to_categorical(y_test, 2)
+
+
+    # count_classes = y_test.shape[1]
+    # model = tf.keras.Sequential([
+    #     tf.keras.layers.Dense(1)
+    #     ])
+
+    # # model.add(Dense(500, activation='relu', input_dim=8))
+
+    # # model.add(Dense(100, activation='relu'))
+
+    # # model.add(Dense(50, activation='relu'))
+
+    # model.add(Dense(27, activation='softmax'))
+
+
+    # # Compile the model
+
+    # # model.compile(optimizer='adam',
+
+    # #             loss='binary_crossentropy',
+    # #             softmax="sigmoid",
+
+    # #             metrics=['accuracy'])
+
+    # model.compile(loss=tf.keras.losses.mae, # mae is short for mean absolute error
+    #           optimizer=tf.keras.optimizers.SGD(), # SGD is short for stochastic gradient descent
+    #           metrics=["mae"])
+
+    # model.fit(tf.expand_dims(X_train, axis=-1), y_train, epochs=20)
+    # pred_train= model.predict(X_train)
+
+    # scores = model.evaluate(X_train, y_train, verbose=0)
+
+    # print('Accuracy on training data: {}% \n Error on training data: {}'.format(scores[1], 1 - scores[1]))
+
+
+
+    # pred_test= model.predict(X_test)
+
+    # scores2 = model.evaluate(X_test, y_test, verbose=0)
+
+    # print('Accuracy on test data: {}% \n Error on test data: {}'.format(scores2[1], 1 - scores2[1]))
+
+
 
 def graphAccuracy(df_trained_data, df_to_predict):
     test_sizes=[x/10 for x in range(1, 10)]
@@ -259,7 +331,7 @@ def graphAccuracy(df_trained_data, df_to_predict):
                 x.append(x_ticks[i])
                 predict("archive/dataset_csv/test_data.csv", "predicted.csv", df_trained_data, df_to_predict)
                 print("Accuracy:", score)
-                
+
             else:
                 y.append(0)
                 x.append(x_ticks[i])
@@ -277,7 +349,7 @@ def graphAccuracy(df_trained_data, df_to_predict):
             i+=1
 
 
-    #plt.scatter(x, y)    
+    #plt.scatter(x, y)
 
     #plt.savefig("variation_accuracy.png")
 
@@ -306,13 +378,13 @@ def graphError(df_trained_data, df_to_predict):
                 print(x_ticks[i])
 
                 score = train(df_trained_data, test_size, train_size)
-                error=predictError(df)
+                predict("archive/dataset_csv/test_data.csv", "predicted.csv", df_trained_data, df_to_predict)
+                error=predictError(pd.read_csv("predicted.csv"))
 
                 y.append(error)
                 x.append(x_ticks[i])
-                predict("archive/dataset_csv/test_data.csv", "predicted.csv", df_trained_data, df_to_predict)
                 print("Accuracy:", score)
-                
+
             else:
                 y.append(0)
                 x.append(x_ticks[i])
@@ -330,7 +402,7 @@ def graphError(df_trained_data, df_to_predict):
             i+=1
 
 
-    #plt.scatter(x, y)    
+    #plt.scatter(x, y)
 
     #plt.savefig("variation_accuracy.png")
 
@@ -339,15 +411,18 @@ def graphError(df_trained_data, df_to_predict):
 if __name__ == "__main__":
     df_trained_data = pd.read_csv("archive/dataset_csv/train_data_clean.csv")
     # print(df_trained_data["genre"].unique())
-    #keras(df_trained_data)
-    df=convert_string_to_dataset_prediction("les tuches 4", "Twenty-five years after the original series of murders in Woodsboro, a new killer emerges, and Sidney Prescott must return to uncover the truth.", "horror")
-    df_to_predict = pd.read_csv("archive/dataset_csv/test_data_solution_clean.csv")
-    graphError(df_trained_data, df_to_predict)
+    keras(df_trained_data)
+    #df=convert_string_to_dataset_prediction("les tuches 4", "Twenty-five years after the original series of murders in Woodsboro, a new killer emerges, and Sidney Prescott must return to uncover the truth.", "horror")
+    #df_to_predict = pd.read_csv("archive/dataset_csv/test_data_solution_clean.csv")
+    #train(df_trained_data, 0.1, 0.1)
+    # predict("archive/dataset_csv/test_data.csv", "predicted.csv", df_trained_data, df_to_predict)
+    # keras(df_trained_data)
+    # graphError(df_trained_data, df_to_predict)
     #score = train(df_trained_data, 2/3, 1/3)
 
-    #predict("archive/dataset_csv/test_data.csv", "predicted.csv", df_trained_data, df_to_predict)
+
     #print("Accuracy:", score)
-    
+
 
 # X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=1/3)
 
