@@ -25,7 +25,7 @@ def similar(summary, lexical_field):
         if s in lexical_field:
             ret += 1
     return ret
-    
+
 # partially working version
 def get_similarities_counter(df, text):
     lexical = df["lexical_field"]
@@ -61,6 +61,7 @@ def get_similarities_fuzzy(df, text):
 
 
 df = pd.read_csv("archive/lexical_field_clean.csv")
+clean_lexical(df)
 data = pd.read_csv("archive/dataset_csv/test_data_solution.csv")
 
 sentences = data["description"].values
@@ -72,9 +73,9 @@ for i in trange(len(sentences)):
     genrePredit=get_similarities_counter(df, sentences[i])
     if genrePredit!=data["genre"][i]:
         error+=1
-        print(genrePredit+" "+data["genre"][i])
+        # print(genrePredit+" "+data["genre"][i])
 
-error=error/len(sentences)
+error=(error/len(sentences))*100
 print(error)
 
 
