@@ -2,3 +2,6 @@ pandas
 nltk
 scikit-learn
 matplotlib
+argparse
+tqdm
+fuzzywuzzy

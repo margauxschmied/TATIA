@@ -9,11 +9,16 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+from sklearn.externals._packaging.version import parse
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils import shuffle
+import argparse
+import sys
+from sklearn import metrics
 
 warnings.filterwarnings("ignore")
 
@@ -70,7 +75,7 @@ def load_model(file_path):
 
 
 class TrainClassifier(object):
-    def __init__(self, df_path="archive/dataset_csv/train_data_clean.csv", test_size=1/3, train_size=2/3, sampling=None):
+    def __init__(self, df_path="archive/dataset_csv/train_data_clean.csv", test_size=0.2, train_size=0.7, sampling=None):
         self.vectorizer = None
         self.df = pd.read_csv(df_path)
         self.classifier = None
@@ -81,36 +86,8 @@ class TrainClassifier(object):
         self.Y = self.df["genre"].values
         self.sampling = sampling if sampling is not None else None
 
-    def train_naif_logistic_regression(self, **kwargs):
-        if self.sampling is not None:
-            self.sentences = shuffle(self.sentences, n_samples=self.sampling)
-            self.Y = shuffle(self.Y, n_samples=self.sampling)
-
-        self.vectorizer = TfidfVectorizer()
-        self.vectorizer.fit(self.sentences)
-        self.vectorizer.transform(self.sentences)
-
-        sentences_train, sentences_test, y_train, y_test = train_test_split(
-            self.sentences, self.Y, test_size=self.test_size, train_size=self.train_size)  # , random_state=50
-        self.vectorizer = TfidfVectorizer()
-        self.vectorizer.fit(sentences_train)
-
-        X_train = self.vectorizer.transform(sentences_train)
-        X_test = self.vectorizer.transform(sentences_test)
-
-        self.classifier = LogisticRegression(**kwargs)
-        self.classifier.fit(X_train, y_train)
-        save_model(dict(classifier=self.classifier,
-                   vectorizer=self.vectorizer), "logistic_regression_model.sav")
-
-        score = self.classifier.score(X_test, y_test)
-        print(
-            f"Trained LogisticRegression model with {score*100:.3f}% accuracy")
-
-        return score
-
-    def train_neural_network(self, **kwargs):
-        print("Start training with MLPClassifier...")
+    def train(self, classifier, model_path="neural_network_model.sav", **kwargs):
+        print(f"Start training with {classifier}...")
 
         if self.sampling is not None:
             self.sentences = shuffle(self.sentences, n_samples=self.sampling)
@@ -128,16 +105,18 @@ class TrainClassifier(object):
         X_train = self.vectorizer.transform(sentences_train)
         X_test = self.vectorizer.transform(sentences_test)
 
-        self.classifier = MLPClassifier(**kwargs)
+        self.classifier = classifier(**kwargs)
 
         self.classifier.fit(X_train, y_train)
 
         save_model(dict(classifier=self.classifier, vectorizer=self.vectorizer),
-                   "neural_network_model.sav")
+                   model_path)
 
         score = self.classifier.score(X_test, y_test)
         print(f"Trained with {score:.3f}% accuracy")
-
+        metrics.ConfusionMatrixDisplay.from_estimator(
+            self.classifier, X_test, y_test, labels=self.df["genre"].unique(), include_values=False, xticks_rotation='vertical')
+        plt.savefig(f'confusion_matrix_{self.classifier}.png', dpi=400)
         return score
 
 
@@ -174,7 +153,7 @@ def graph_train_naif_logistic_regression(df_trained_data_path, df_to_predict):
 
                 trainer = TrainClassifier(
                     df_trained_data_path, test_size, train_size)
-                score = trainer.train_naif_logistic_regression()
+                score = trainer.train(classifier=LogisticRegression, model_path="naif_logistic_regression_model.sav")
 
                 predict("predicted_logistic_regression.csv",
                         df_to_predict, classifier_method="logistic_regression")
@@ -184,14 +163,7 @@ def graph_train_naif_logistic_regression(df_trained_data_path, df_to_predict):
 
                 y_accuracy.append(score*100)
                 x.append(x_ticks[i])
-                # predict("predicted_logistic_regression.csv",
-                #         df_to_predict, classifier_method="logistic_regression")
                 print("Accuracy:", score)
-
-            # else:
-            #     y_error.append(0)
-            #     y_accuracy.append(0)
-            #     x.append(x_ticks[i])
 
             if i != 0 and i % 9 == 0:
                 plt.scatter(x, y_accuracy)
@@ -210,10 +182,71 @@ def graph_train_naif_logistic_regression(df_trained_data_path, df_to_predict):
                 plt.title("Naïf Logistic Regression variation")
                 plt.grid(True)
 
-                # plt.savefig("variation_error"+str(nbOfGraph)+".png")
+                nbOfGraph += 1
+            i += 1
 
-                # plt.clf()
-                # plt.xticks(ticks=x_ticks, labels=x_labels)
+
+def graph_train_svc(df_trained_data_path, df_to_predict):
+    test_sizes = [x/10 for x in range(1, 10)]
+    train_sizes = [x/10 for x in range(1, 10)]
+
+    x_labels = [0]
+    x_ticks = [0]
+    i = 0
+    for a in test_sizes:
+        for b in train_sizes:
+            x_labels.append("("+str(a)+","+str(b)+")")
+            i += 1
+            x_ticks.append(i)
+    i = 1
+
+    plt.xticks(ticks=x_ticks, labels=x_labels, rotation=10)
+    plt.xlabel("(test_size, train_size)")
+    plt.ylabel("Percentage (%)")
+    plt.title("SVM variation")
+    plt.grid(True)
+    x = []
+    y_accuracy = []
+    y_error = []
+
+    nbOfGraph = 0
+    for test_size in test_sizes:
+        for train_size in train_sizes:
+            if test_size+train_size < 1:
+                print(str(test_size)+" "+str(train_size))
+                print(x_ticks[i])
+                print(x_labels[i])
+
+                trainer = TrainClassifier(
+                    df_trained_data_path, test_size, train_size)
+                score = trainer.train(classifier=LinearSVC, model_path="svm_model.sav")
+
+                predict("predicted_svm.csv",
+                        df_to_predict, classifier_method="svm")
+                error = predictError(pd.read_csv(
+                    "predicted_svm.csv"))
+                y_error.append(error)
+
+                y_accuracy.append(score*100)
+                x.append(x_ticks[i])
+                print("Accuracy:", score)
+
+            if i != 0 and i % 9 == 0:
+                plt.scatter(x, y_accuracy)
+                plt.scatter(x, y_error)
+                plt.legend(["Accuracy", "Error"])
+
+                plt.savefig(
+                    f"svm-variation-{nbOfGraph}.png")
+                y_accuracy = []
+                y_error = []
+                x = []
+                plt.clf()
+                plt.xticks(ticks=x_ticks, labels=x_labels, rotation=10)
+                plt.xlabel("(test_size, train_size)")
+                plt.ylabel("Percentage (%)")
+                plt.title("SVM variation")
+                plt.grid(True)
 
                 nbOfGraph += 1
             i += 1
@@ -224,7 +257,7 @@ def graph_train_neural_network(df_trained_data_path, df_to_predict):
     x_ticks = [0]
     i = 0
     for layer in range(1, 5):
-        for neuron in range(1, 10):
+        for neuron in range(1, 101, 9):
             x_labels.append(str(layer)+" x "+str(neuron))
             i += 1
             x_ticks.append(i)
@@ -242,14 +275,14 @@ def graph_train_neural_network(df_trained_data_path, df_to_predict):
 
     nbOfGraph = 0
     for layer in range(1, 5):
-        for neuron in range(1, 10):
+        for neuron in range(1, 101, 9):
             print(str(layer)+" x "+str(neuron))
             print(x_ticks[i])
             print(x_labels[i])
             trainer = TrainClassifier(
-                df_trained_data_path, 0.1, 0.6)
-            score = trainer.train_neural_network(
-                hidden_layer_sizes=tuple((neuron for i in range(layer))))
+                df_trained_data_path, 0.2, 0.7)
+            score = trainer.train(classifier=MLPClassifier,
+                                  hidden_layer_sizes=tuple((neuron for i in range(layer))))
 
             predict("predicted_neural_network.csv",
                     df_to_predict, classifier_method="neural_network")
@@ -261,34 +294,25 @@ def graph_train_neural_network(df_trained_data_path, df_to_predict):
             x.append(x_ticks[i])
 
             print("Accuracy:", score)
-
-            if i != 0 and i % 9 == 0:
-                plt.scatter(x, y_accuracy)
-                plt.scatter(x, y_error)
-                plt.legend(["Accuracy", "Error"])
-                plt.savefig(
-                    f"neural_network_variation-error_accuracy-{nbOfGraph}.png")
-                y_accuracy = []
-                y_error = []
-                x = []
-                plt.clf()
-
-                plt.xticks(ticks=x_ticks, labels=x_labels, rotation=10)
-                plt.xlabel("layer X neurons")
-                plt.ylabel("Percentage (%)")
-                plt.title("Neural Network MLPClassifier variation")
-                plt.grid(True)
-                # plt.savefig("variation_error"+str(nbOfGraph)+".png")
-
-                # plt.clf()
-                # plt.xticks(ticks=x_ticks, labels=x_labels)
-
-                nbOfGraph += 1
             i += 1
 
-    #plt.scatter(x, y)
+        plt.scatter(x, y_accuracy)
+        plt.scatter(x, y_error)
+        plt.legend(["Accuracy", "Error"])
+        plt.savefig(
+            f"neural_network_variation-error_accuracy-{nbOfGraph}.png")
+        y_accuracy = []
+        y_error = []
+        x = []
+        plt.clf()
 
-    # plt.savefig("variation_accuracy.png")
+        plt.xticks(ticks=x_ticks, labels=x_labels, rotation=10)
+        plt.xlabel("layer X neurons")
+        plt.ylabel("Percentage (%)")
+        plt.title("Neural Network MLPClassifier variation")
+        plt.grid(True)
+
+        nbOfGraph += 1
 
 
 def predictError(df):
@@ -304,58 +328,103 @@ def predictError(df):
     return (error/length_genre)*100
 
 
-def predict(output, df_to_predict, classifier_method="neural_network", sampling=None, **kwargs):
+def predict(output, df_to_predict, classifier_method="neural_network", sampling=None, model_path="neural_network_model.sav", **kwargs):
+
     try:
-        if classifier_method == "neural_network":
-            model = load_model("neural_network_model.sav")
-        else:
-            model = load_model("logistic_regression_model.sav")
-        classifier = model["classifier"]
-        vectorizer = model["vectorizer"]
+        model = load_model(model_path)
     except:
         trainer = TrainClassifier(sampling=sampling)
         if classifier_method == "neural_network":
-            trainer.train_neural_network(**kwargs)
-        else:
-            trainer.train_naif_logistic_regression(**kwargs)
+            trainer.train(MLPClassifier, **kwargs)
+        elif classifier_method == "logistic_regression":
+            trainer.train(LogisticRegression, **kwargs)
+        elif classifier_method == "svm":
+            trainer.train(LinearSVC, **kwargs)
 
-        if classifier_method == "neural_network":
-            model = load_model("neural_network_model.sav")
-        else:
-            model = load_model("logistic_regression_model.sav")
-        classifier = model["classifier"]
-        vectorizer = model["vectorizer"]
+        model = load_model(model_path)
 
+    classifier = model["classifier"]
+    vectorizer = model["vectorizer"]
     print(f"Predicting with {classifier}...")
 
     X_test_to_predict = vectorizer.transform(df_to_predict["description"])
 
     classified = classifier.predict(X_test_to_predict)
-
-    df2 = pd.DataFrame(data={
-                       "title": df_to_predict["title"].values, "genre": df_to_predict["genre"], "genre_predit": classified})
+    try:
+        # calcul du pourcentage d'erreurs
+        df2 = pd.DataFrame(data={
+            "title": df_to_predict["title"].values, "description": df_to_predict["description"], "genre": df_to_predict["genre"], "genre_predit": classified})
+    except:
+        df2 = pd.DataFrame(data={
+            "title": df_to_predict["title"].values, "description": df_to_predict["description"], "genre_predit": classified})
 
     # predictError(df2)
     df2.to_csv(output)
+    print(f"Prediction done and saved in {model_path}")
 
 
-def convert_string_to_dataset_prediction(title, description, genre_attendu):
-    return pd.DataFrame({"title": title, "description": clean_text(description), "genre": genre_attendu}, index=[0])
+def convert_string_to_dataset_prediction(title, description):
+    return pd.DataFrame({"title": title, "description": clean_text(description)}, index=[0])
 
 
 if __name__ == "__main__":
     # df_trained_data = pd.read_csv("archive/dataset_csv/train_data_clean.csv")
 
-    #df=convert_string_to_dataset_prediction("les tuches 4", "Twenty-five years after the original series of murders in Woodsboro, a new killer emerges, and Sidney Prescott must return to uncover the truth.", "horror")
+    # df_to_predict=convert_string_to_dataset_prediction("Junoon", "A wannabe vlogger travels from Saudi Arabia with his wife and best friend all the way to Southern California, wishing for some great paranormal footage. When their wish comes true, will they know when to turn the cameras off and flee?")
     df_to_predict = pd.read_csv(
         "archive/dataset_csv/test_data_solution_clean.csv")
     # train(df_trained_data, 0.1, 0.6)
     # predict("test_predicted.csv", df_to_predict=df_to_predict, classifier_method="logistic_regression", sampling=1000)
 
     #score = train(df_trained_data, 2/3, 1/3)
-    graph_train_naif_logistic_regression(
-        "archive/dataset_csv/train_data_clean.csv", df_to_predict)
-    graph_train_neural_network(
-        "archive/dataset_csv/train_data_clean.csv", df_to_predict)
+    # graph_train_naif_logistic_regression(
+    #     "archive/dataset_csv/train_data_clean.csv", df_to_predict)
 
+    # graph_train_neural_network(
+    #     "archive/dataset_csv/train_data_clean.csv", df_to_predict)
+
+    graph_train_svc("archive/dataset_csv/train_data_clean.csv", df_to_predict)
     #print("Accuracy:", score)
+    # parser = argparse.ArgumentParser(description='Predict genre of a movie')
+    # parser.add_argument('-t', '--title', type=str,
+    #                     help="Title of the movie", dest="title", default="")
+    # parser.add_argument('-d', '--description', type=str,
+    #                     help="Description of the movie", dest="description", default=None)
+
+    # parser.add_argument('-cl', '--classifier', type=str,
+    #                     help="Classifier to use", dest="classifier", default="neural_network")
+    # parser.add_argument('-mp', '--model_path', type=str, help="Path to the model",
+    #                     dest="model_path", default="neural_network_model.sav")
+    # parser.add_argument('-tr', '--train', type=bool,
+    #                     help="Train the model", dest="train", default=False)
+    # parser.add_argument('-csv', '--csv_output', type=str,
+    #                     help="CSV output file", dest="csv_output", default="predicted.csv")
+    # parser.add_argument('-n', '--neurons', type=int,
+    #                     help="Number of neurons in the hidden layer", dest="neurons", default=100)
+    # parser.add_argument('-l', '--layers', type=int,
+    #                     help="Number of hidden layers", dest="layers", default=1)
+    # args = parser.parse_args()
+    # print(args)
+
+    # if args.train:
+    #     trainer = TrainClassifier()
+    #     if args.classifier == "neural_network":
+    #         trainer.train(
+    #             classifier=MLPClassifier,
+    #             hidden_layer_sizes=tuple(
+    #                 (args.neurons for i in range(args.layers))),
+    #             model_path=args.model_path)
+    #     elif args.classifier == "logistic_regression":
+    #         trainer.train(classifier=LogisticRegression,
+    #                       model_path=args.model_path)
+    #     elif args.classifier == "svm":
+    #         trainer.train(classifier=LinearSVC, model_path=args.model_path)
+    #     else:
+    #         print("Unknown classifier")
+    #         sys.exit(1)
+
+    # if args.description is not None:
+    #     predict(args.csv_output, convert_string_to_dataset_prediction(
+    #         args.title, args.description), classifier_method=args.classifier, model_path=args.model_path)
+
+    # sys.exit(0)
