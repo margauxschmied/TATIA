@@ -1,6 +1,6 @@
 import re
 import pandas as pd
-from main import clean_text
+from classifier import clean_text
 from fuzzywuzzy import fuzz
 from tqdm import trange
 

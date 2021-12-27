@@ -9,7 +9,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
 from sklearn import datasets
 import matplotlib.pyplot as plt
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
 import pandas as pd
 from sklearn.utils import shuffle
 
@@ -17,22 +17,21 @@ from sklearn.utils import shuffle
 df = pd.read_csv("archive/dataset_csv/train_data_clean.csv")
 
 sentences = df["description"].values
-vectorizer = CountVectorizer()
+vectorizer = TfidfVectorizer()
 vectorizer.fit(sentences)
 vectorizer.transform(sentences)
 
 Y = df["genre"].values
 
 
-X_train, X_test, y_train, y_test = train_test_split(sentences, Y, test_size=0.2, train_size=0.7)
-vectorizer = CountVectorizer()
+X_train, X_test, y_train, y_test = train_test_split(sentences, Y, test_size=0.1, train_size=0.5)
+vectorizer = TfidfVectorizer()
 vectorizer.fit(X_train)
 
 X_train = vectorizer.transform(X_train)
 X_test  = vectorizer.transform(X_test)
 
 
-kfold = model_selection.KFold(n_splits=10)
 
 
 
@@ -43,7 +42,7 @@ models.append(('KNN', KNeighborsClassifier()))
 models.append(('CART', DecisionTreeClassifier()))
 models.append(('NB', MultinomialNB()))
 models.append(('SVM', LinearSVC()))
-models.append(('MLP', MLPClassifier()))
+models.append(('MLP', MLPClassifier(hidden_layer_sizes=(10,))))
 
 
 results = []
@@ -52,7 +51,8 @@ scoring = 'accuracy'
 for name, model in models:
     print(f"Testing with {name}...")
     kfold = model_selection.KFold(n_splits=10)
-    cv_results = model_selection.cross_val_score(model, X_train, y_train, cv=kfold, scoring=scoring) * 100
+    cv_results = model_selection.cross_val_score(model, X_train, y_train, scoring=scoring, n_jobs=-1, verbose=1, cv=kfold) * 100
+    # score = model.score(X_test, y_test) * 100
     results.append(cv_results)
     names.append(name)
     msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())

@@ -114,9 +114,10 @@ class TrainClassifier(object):
 
         score = self.classifier.score(X_test, y_test)
         print(f"Trained with {score:.3f}% accuracy")
-        metrics.ConfusionMatrixDisplay.from_estimator(
-            self.classifier, X_test, y_test, labels=self.df["genre"].unique(), include_values=False, xticks_rotation='vertical')
-        plt.savefig(f'confusion_matrix_{self.classifier}.png', dpi=400)
+        # metrics.ConfusionMatrixDisplay.from_estimator(
+        #     self.classifier, X_test, y_test, labels=self.df["genre"].unique(), include_values=False, xticks_rotation='vertical')
+        # plt.savefig(f'confusion_matrix_{self.classifier}.png', dpi=400)
+        # plt.clf()
         return score
 
 
