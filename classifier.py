@@ -9,7 +9,6 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-from sklearn.externals._packaging.version import parse
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
@@ -75,7 +74,7 @@ def load_model(file_path):
 
 
 class TrainClassifier(object):
-    def __init__(self, df_path="archive/dataset_csv/train_data_clean.csv", test_size=0.2, train_size=0.7, sampling=None):
+    def __init__(self, df_path="archive/dataset_csv/train_data_clean.csv", test_size=0.1, train_size=0.5, sampling=None):
         self.vectorizer = None
         self.df = pd.read_csv(df_path)
         self.classifier = None
@@ -154,7 +153,8 @@ def graph_train_naif_logistic_regression(df_trained_data_path, df_to_predict):
 
                 trainer = TrainClassifier(
                     df_trained_data_path, test_size, train_size)
-                score = trainer.train(classifier=LogisticRegression, model_path="naif_logistic_regression_model.sav")
+                score = trainer.train(
+                    classifier=LogisticRegression, model_path="naif_logistic_regression_model.sav")
 
                 predict("predicted_logistic_regression.csv",
                         df_to_predict, classifier_method="logistic_regression")
@@ -220,7 +220,8 @@ def graph_train_svc(df_trained_data_path, df_to_predict):
 
                 trainer = TrainClassifier(
                     df_trained_data_path, test_size, train_size)
-                score = trainer.train(classifier=LinearSVC, model_path="svm_model.sav")
+                score = trainer.train(
+                    classifier=LinearSVC, model_path="svm_model.sav")
 
                 predict("predicted_svm.csv",
                         df_to_predict, classifier_method="svm")
@@ -369,23 +370,11 @@ def convert_string_to_dataset_prediction(title, description):
 
 
 if __name__ == "__main__":
-    # df_trained_data = pd.read_csv("archive/dataset_csv/train_data_clean.csv")
+    # df_to_predict=convert_string_to_dataset_prediction("Dune", "The story of Paul Atreides, a young man as gifted as he was brilliant, destined to meet an extraordinary destiny that totally surpasses him. Because if he wants to preserve the future of his family and his people, he will have to go to the most dangerous planet in the universe - the only one able to provide the most precious resource in the world, capable of multiplying tenfold. power of mankind. As evil forces vie for control of this planet, only those who manage to overcome their fear will be able to survive ...")
 
-    # df_to_predict=convert_string_to_dataset_prediction("Junoon", "A wannabe vlogger travels from Saudi Arabia with his wife and best friend all the way to Southern California, wishing for some great paranormal footage. When their wish comes true, will they know when to turn the cameras off and flee?")
-    # df_to_predict = pd.read_csv(
-    #     "archive/dataset_csv/test_data_solution_clean.csv")
-    # train(df_trained_data, 0.1, 0.6)
-    # predict("test_predicted.csv", df_to_predict=df_to_predict, classifier_method="logistic_regression", sampling=1000)
+    # predict("predictions/dune-predictions.csv", df_to_predict=df_to_predict, classifier_method="svm", model_path="models/svm.sav")
 
-    #score = train(df_trained_data, 2/3, 1/3)
-    # graph_train_naif_logistic_regression(
-    #     "archive/dataset_csv/train_data_clean.csv", df_to_predict)
-
-    # graph_train_neural_network(
-    #     "archive/dataset_csv/train_data_clean.csv", df_to_predict)
-
-    # graph_train_svc("archive/dataset_csv/train_data_clean.csv", df_to_predict)
-    #print("Accuracy:", score)
+    # sys.exit(0)
     parser = argparse.ArgumentParser(description='Predict genre of a movie')
     parser.add_argument('-t', '--title', type=str,
                         help="Title of the movie", dest="title", default="")
@@ -421,7 +410,7 @@ if __name__ == "__main__":
         elif args.classifier == "svm":
             trainer.train(classifier=LinearSVC, model_path=args.model_path)
         else:
-            print("Unknown classifier")
+            print("Unknown classifier see python3 classifier.py -h")
             sys.exit(1)
 
     if args.description is not None:

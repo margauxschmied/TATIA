@@ -24,16 +24,13 @@ vectorizer.transform(sentences)
 Y = df["genre"].values
 
 
-X_train, X_test, y_train, y_test = train_test_split(sentences, Y, test_size=0.1, train_size=0.5)
+X_train, X_test, y_train, y_test = train_test_split(
+    sentences, Y, test_size=0.1, train_size=0.5)
 vectorizer = TfidfVectorizer()
 vectorizer.fit(X_train)
 
 X_train = vectorizer.transform(X_train)
-X_test  = vectorizer.transform(X_test)
-
-
-
-
+X_test = vectorizer.transform(X_test)
 
 
 models = []
@@ -51,7 +48,8 @@ scoring = 'accuracy'
 for name, model in models:
     print(f"Testing with {name}...")
     kfold = model_selection.KFold(n_splits=8)
-    cv_results = model_selection.cross_val_score(model, X_train, y_train, scoring=scoring, n_jobs=-1, verbose=1, cv=kfold) * 100
+    cv_results = model_selection.cross_val_score(
+        model, X_train, y_train, scoring=scoring, n_jobs=-1, verbose=1, cv=kfold) * 100
     mean = cv_results.mean()
     results.append(mean)
     names.append(name)
@@ -59,7 +57,8 @@ for name, model in models:
     print(msg)
 
 plt.title('How to compare sklearn classification algorithms')
-plt.bar(names, results, width=0.7, color=plt.get_cmap('Paired').colors, edgecolor='k', linewidth=2)
+plt.bar(names, results, width=0.7, color=plt.get_cmap(
+    'Paired').colors, edgecolor='k', linewidth=2)
 plt.xlabel("Classifier")
 plt.ylabel("Accuracy (%)")
 plt.savefig("compare_classifier.png")
