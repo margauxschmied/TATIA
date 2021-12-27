@@ -50,19 +50,16 @@ names = []
 scoring = 'accuracy'
 for name, model in models:
     print(f"Testing with {name}...")
-    kfold = model_selection.KFold(n_splits=10)
+    kfold = model_selection.KFold(n_splits=8)
     cv_results = model_selection.cross_val_score(model, X_train, y_train, scoring=scoring, n_jobs=-1, verbose=1, cv=kfold) * 100
-    # score = model.score(X_test, y_test) * 100
-    results.append(cv_results)
+    mean = cv_results.mean()
+    results.append(mean)
     names.append(name)
-    msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
+    msg = "%s: %f (%f)" % (name, mean, cv_results.std())
     print(msg)
 
-fig = plt.figure(figsize=(10,10))
-fig.suptitle('How to compare sklearn classification algorithms')
-ax = fig.add_subplot(111)
-plt.boxplot(results)
-ax.set_xticklabels(names)
-ax.set_xlabel("Classifier")
-ax.set_ylabel("Accuracy (%)")
+plt.title('How to compare sklearn classification algorithms')
+plt.bar(names, results, width=0.7, color=plt.get_cmap('Paired').colors, edgecolor='k', linewidth=2)
+plt.xlabel("Classifier")
+plt.ylabel("Accuracy (%)")
 plt.savefig("compare_classifier.png")

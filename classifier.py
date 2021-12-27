@@ -114,10 +114,10 @@ class TrainClassifier(object):
 
         score = self.classifier.score(X_test, y_test)
         print(f"Trained with {score:.3f}% accuracy")
-        # metrics.ConfusionMatrixDisplay.from_estimator(
-        #     self.classifier, X_test, y_test, labels=self.df["genre"].unique(), include_values=False, xticks_rotation='vertical')
-        # plt.savefig(f'confusion_matrix_{self.classifier}.png', dpi=400)
-        # plt.clf()
+        metrics.ConfusionMatrixDisplay.from_estimator(
+            self.classifier, X_test, y_test, labels=self.df["genre"].unique(), include_values=False, xticks_rotation=90)
+        plt.savefig(f'confusion_matrix_{self.classifier}.png', dpi=400)
+        plt.clf()
         return score
 
 
@@ -361,7 +361,7 @@ def predict(output, df_to_predict, classifier_method="neural_network", sampling=
 
     # predictError(df2)
     df2.to_csv(output)
-    print(f"Prediction done and saved in {model_path}")
+    print(f"Prediction done and saved in {output}")
 
 
 def convert_string_to_dataset_prediction(title, description):
@@ -372,8 +372,8 @@ if __name__ == "__main__":
     # df_trained_data = pd.read_csv("archive/dataset_csv/train_data_clean.csv")
 
     # df_to_predict=convert_string_to_dataset_prediction("Junoon", "A wannabe vlogger travels from Saudi Arabia with his wife and best friend all the way to Southern California, wishing for some great paranormal footage. When their wish comes true, will they know when to turn the cameras off and flee?")
-    df_to_predict = pd.read_csv(
-        "archive/dataset_csv/test_data_solution_clean.csv")
+    # df_to_predict = pd.read_csv(
+    #     "archive/dataset_csv/test_data_solution_clean.csv")
     # train(df_trained_data, 0.1, 0.6)
     # predict("test_predicted.csv", df_to_predict=df_to_predict, classifier_method="logistic_regression", sampling=1000)
 
@@ -384,48 +384,48 @@ if __name__ == "__main__":
     # graph_train_neural_network(
     #     "archive/dataset_csv/train_data_clean.csv", df_to_predict)
 
-    graph_train_svc("archive/dataset_csv/train_data_clean.csv", df_to_predict)
+    # graph_train_svc("archive/dataset_csv/train_data_clean.csv", df_to_predict)
     #print("Accuracy:", score)
-    # parser = argparse.ArgumentParser(description='Predict genre of a movie')
-    # parser.add_argument('-t', '--title', type=str,
-    #                     help="Title of the movie", dest="title", default="")
-    # parser.add_argument('-d', '--description', type=str,
-    #                     help="Description of the movie", dest="description", default=None)
+    parser = argparse.ArgumentParser(description='Predict genre of a movie')
+    parser.add_argument('-t', '--title', type=str,
+                        help="Title of the movie", dest="title", default="")
+    parser.add_argument('-d', '--description', type=str,
+                        help="Description of the movie", dest="description", default=None)
 
-    # parser.add_argument('-cl', '--classifier', type=str,
-    #                     help="Classifier to use", dest="classifier", default="neural_network")
-    # parser.add_argument('-mp', '--model_path', type=str, help="Path to the model",
-    #                     dest="model_path", default="neural_network_model.sav")
-    # parser.add_argument('-tr', '--train', type=bool,
-    #                     help="Train the model", dest="train", default=False)
-    # parser.add_argument('-csv', '--csv_output', type=str,
-    #                     help="CSV output file", dest="csv_output", default="predicted.csv")
-    # parser.add_argument('-n', '--neurons', type=int,
-    #                     help="Number of neurons in the hidden layer", dest="neurons", default=100)
-    # parser.add_argument('-l', '--layers', type=int,
-    #                     help="Number of hidden layers", dest="layers", default=1)
-    # args = parser.parse_args()
-    # print(args)
+    parser.add_argument('-cl', '--classifier', type=str,
+                        help="Classifier to use", dest="classifier", default="neural_network")
+    parser.add_argument('-mp', '--model_path', type=str, help="Path to the model",
+                        dest="model_path", default="neural_network_model.sav")
+    parser.add_argument('-tr', '--train', type=bool,
+                        help="Train the model", dest="train", default=False)
+    parser.add_argument('-csv', '--csv_output', type=str,
+                        help="CSV output file", dest="csv_output", default="predicted.csv")
+    parser.add_argument('-n', '--neurons', type=int,
+                        help="Number of neurons in the hidden layer", dest="neurons", default=100)
+    parser.add_argument('-l', '--layers', type=int,
+                        help="Number of hidden layers", dest="layers", default=1)
+    args = parser.parse_args()
+    print(args)
 
-    # if args.train:
-    #     trainer = TrainClassifier()
-    #     if args.classifier == "neural_network":
-    #         trainer.train(
-    #             classifier=MLPClassifier,
-    #             hidden_layer_sizes=tuple(
-    #                 (args.neurons for i in range(args.layers))),
-    #             model_path=args.model_path)
-    #     elif args.classifier == "logistic_regression":
-    #         trainer.train(classifier=LogisticRegression,
-    #                       model_path=args.model_path)
-    #     elif args.classifier == "svm":
-    #         trainer.train(classifier=LinearSVC, model_path=args.model_path)
-    #     else:
-    #         print("Unknown classifier")
-    #         sys.exit(1)
+    if args.train:
+        trainer = TrainClassifier()
+        if args.classifier == "neural_network":
+            trainer.train(
+                classifier=MLPClassifier,
+                hidden_layer_sizes=tuple(
+                    (args.neurons for i in range(args.layers))),
+                model_path=args.model_path)
+        elif args.classifier == "logistic_regression":
+            trainer.train(classifier=LogisticRegression,
+                          model_path=args.model_path)
+        elif args.classifier == "svm":
+            trainer.train(classifier=LinearSVC, model_path=args.model_path)
+        else:
+            print("Unknown classifier")
+            sys.exit(1)
 
-    # if args.description is not None:
-    #     predict(args.csv_output, convert_string_to_dataset_prediction(
-    #         args.title, args.description), classifier_method=args.classifier, model_path=args.model_path)
+    if args.description is not None:
+        predict(args.csv_output, convert_string_to_dataset_prediction(
+            args.title, args.description), classifier_method=args.classifier, model_path=args.model_path)
 
-    # sys.exit(0)
+    sys.exit(0)
