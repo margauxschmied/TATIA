@@ -1,6 +1,8 @@
+import argparse
 import pickle
 import re
 import string
+import sys
 import warnings
 
 import matplotlib.pyplot as plt
@@ -9,18 +11,15 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+from sklearn import metrics
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import LinearSVC
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
+from sklearn.svm import LinearSVC
 from sklearn.utils import shuffle
-import argparse
-import sys
-from sklearn import metrics
 
 warnings.filterwarnings("ignore")
-
 
 stopwords_list = stopwords.words('english')
 stopwords_list += list(string.punctuation)
@@ -29,14 +28,16 @@ stopwords_list += ['one', 'two', 'three', 'four', 'five', 'six', 'seven',
 stopwords_list += [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 stopwords_list += [x for x in string.ascii_lowercase]
 
+
 def print_genre():
-    df_path="archive/dataset_csv/train_data_clean.csv"
+    df_path = "archive/dataset_csv/train_data_clean.csv"
     df = pd.read_csv(df_path)
-    genres=[]
+    genres = []
     for i in range(len(df["genre"])):
         if df["genre"][i] not in genres:
             genres.append(df["genre"][i])
     print(genres)
+
 
 def clean_text(text):
     text = text.lower()
@@ -82,7 +83,8 @@ def load_model(file_path):
 
 
 class TrainClassifier(object):
-    def __init__(self, df_path="archive/dataset_csv/train_data_clean.csv", test_size=0.1, train_size=0.5, sampling=None):
+    def __init__(self, df_path="archive/dataset_csv/train_data_clean.csv", test_size=0.1, train_size=0.5,
+                 sampling=None):
         self.vectorizer = None
         self.df = pd.read_csv(df_path)
         self.classifier = None
@@ -129,15 +131,15 @@ class TrainClassifier(object):
 
 
 def graph_train_naif_logistic_regression(df_trained_data_path, df_to_predict):
-    test_sizes = [x/10 for x in range(1, 10)]
-    train_sizes = [x/10 for x in range(1, 10)]
+    test_sizes = [x / 10 for x in range(1, 10)]
+    train_sizes = [x / 10 for x in range(1, 10)]
 
     x_labels = [0]
     x_ticks = [0]
     i = 0
     for a in test_sizes:
         for b in train_sizes:
-            x_labels.append("("+str(a)+","+str(b)+")")
+            x_labels.append("(" + str(a) + "," + str(b) + ")")
             i += 1
             x_ticks.append(i)
     i = 1
@@ -154,8 +156,8 @@ def graph_train_naif_logistic_regression(df_trained_data_path, df_to_predict):
     nbOfGraph = 0
     for test_size in test_sizes:
         for train_size in train_sizes:
-            if test_size+train_size < 1:
-                print(str(test_size)+" "+str(train_size))
+            if test_size + train_size < 1:
+                print(str(test_size) + " " + str(train_size))
                 print(x_ticks[i])
                 print(x_labels[i])
 
@@ -170,7 +172,7 @@ def graph_train_naif_logistic_regression(df_trained_data_path, df_to_predict):
                     "predicted_logistic_regression.csv"))
                 y_error.append(error)
 
-                y_accuracy.append(score*100)
+                y_accuracy.append(score * 100)
                 x.append(x_ticks[i])
                 print("Accuracy:", score)
 
@@ -196,15 +198,15 @@ def graph_train_naif_logistic_regression(df_trained_data_path, df_to_predict):
 
 
 def graph_train_svc(df_trained_data_path, df_to_predict):
-    test_sizes = [x/10 for x in range(1, 10)]
-    train_sizes = [x/10 for x in range(1, 10)]
+    test_sizes = [x / 10 for x in range(1, 10)]
+    train_sizes = [x / 10 for x in range(1, 10)]
 
     x_labels = [0]
     x_ticks = [0]
     i = 0
     for a in test_sizes:
         for b in train_sizes:
-            x_labels.append("("+str(a)+","+str(b)+")")
+            x_labels.append("(" + str(a) + "," + str(b) + ")")
             i += 1
             x_ticks.append(i)
     i = 1
@@ -221,8 +223,8 @@ def graph_train_svc(df_trained_data_path, df_to_predict):
     nbOfGraph = 0
     for test_size in test_sizes:
         for train_size in train_sizes:
-            if test_size+train_size < 1:
-                print(str(test_size)+" "+str(train_size))
+            if test_size + train_size < 1:
+                print(str(test_size) + " " + str(train_size))
                 print(x_ticks[i])
                 print(x_labels[i])
 
@@ -237,7 +239,7 @@ def graph_train_svc(df_trained_data_path, df_to_predict):
                     "predicted_svm.csv"))
                 y_error.append(error)
 
-                y_accuracy.append(score*100)
+                y_accuracy.append(score * 100)
                 x.append(x_ticks[i])
                 print("Accuracy:", score)
 
@@ -268,7 +270,7 @@ def graph_train_neural_network(df_trained_data_path, df_to_predict):
     i = 0
     for layer in range(1, 5):
         for neuron in range(1, 101, 9):
-            x_labels.append(str(layer)+" x "+str(neuron))
+            x_labels.append(str(layer) + " x " + str(neuron))
             i += 1
             x_ticks.append(i)
     i = 1
@@ -286,7 +288,7 @@ def graph_train_neural_network(df_trained_data_path, df_to_predict):
     nbOfGraph = 0
     for layer in range(1, 5):
         for neuron in range(1, 101, 9):
-            print(str(layer)+" x "+str(neuron))
+            print(str(layer) + " x " + str(neuron))
             print(x_ticks[i])
             print(x_labels[i])
             trainer = TrainClassifier(
@@ -300,7 +302,7 @@ def graph_train_neural_network(df_trained_data_path, df_to_predict):
                 "predicted_neural_network.csv"))
 
             y_error.append(error)
-            y_accuracy.append(score*100)
+            y_accuracy.append(score * 100)
             x.append(x_ticks[i])
 
             print("Accuracy:", score)
@@ -334,12 +336,12 @@ def predictError(df):
         if genre[i] != genre_predicted[i]:
             error += 1
 
-    print(f"Error : {(error/length_genre)*100:.3f}%")
-    return (error/length_genre)*100
+    print(f"Error : {(error / length_genre) * 100:.3f}%")
+    return (error / length_genre) * 100
 
 
-def predict(output, df_to_predict, classifier_method="neural_network", sampling=None, model_path="neural_network_model.sav", **kwargs):
-
+def predict(output, df_to_predict, classifier_method="neural_network", sampling=None,
+            model_path="neural_network_model.sav", **kwargs):
     try:
         model = load_model(model_path)
     except:
@@ -363,10 +365,12 @@ def predict(output, df_to_predict, classifier_method="neural_network", sampling=
     try:
         # calcul du pourcentage d'erreurs
         df2 = pd.DataFrame(data={
-            "title": df_to_predict["title"].values, "description": df_to_predict["description"], "genre": df_to_predict["genre"], "genre_predit": classified})
+            "title": df_to_predict["title"].values, "description": df_to_predict["description"],
+            "genre": df_to_predict["genre"], "genre_predit": classified})
     except:
         df2 = pd.DataFrame(data={
-            "title": df_to_predict["title"].values, "description": df_to_predict["description"], "genre_predit": classified})
+            "title": df_to_predict["title"].values, "description": df_to_predict["description"],
+            "genre_predit": classified})
 
     # predictError(df2)
     df2.to_csv(output)
@@ -402,7 +406,8 @@ if __name__ == "__main__":
                         help="Train size", dest="train_size", default=0.5)
     parser.add_argument('-tes', '--test_size', type=float,
                         help="Test size", dest="test_size", default=0.1)
-    parser.add_argument('-csv_train', '--csv_train', type=str, help="CSV train file", dest="csv_train", default="archive/dataset_csv/train_data_clean.csv")
+    parser.add_argument('-csv_train', '--csv_train', type=str, help="CSV train file", dest="csv_train",
+                        default="archive/dataset_csv/train_data_clean.csv")
     args = parser.parse_args()
     print(args)
 

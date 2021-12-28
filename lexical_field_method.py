@@ -1,6 +1,7 @@
 import pandas as pd
-from classifier import clean_text
 from tqdm import trange
+
+from classifier import clean_text
 
 
 def clean_lexical(df):
@@ -24,6 +25,7 @@ def similar(summary, lexical_field):
             ret += 1
     return ret
 
+
 # partially working version
 
 
@@ -44,7 +46,7 @@ def get_similarities_counter(df, text):
 
 
 df = pd.read_csv("archive/lexical_field_clean.csv")
-#clean_lexical(df)
+# clean_lexical(df)
 data = pd.read_csv("archive/dataset_csv/test_data_solution.csv")
 
 sentences = data["description"].values
@@ -58,5 +60,5 @@ for i in trange(len(sentences)):
         error += 1
         # print(genrePredit+" "+data["genre"][i])
 
-error = (error/len(sentences))*100
+error = (error / len(sentences)) * 100
 print(error)
