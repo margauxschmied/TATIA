@@ -8,7 +8,7 @@ Pour obtenir de l’aide :
 
 ```bash
 $ python3 classifier.py -h
-usage: classifier.py [-h] [-t TITLE] [-d DESCRIPTION] [-cl CLASSIFIER] [-mp MODEL_PATH] [-tr TRAIN] [-csv CSV_OUTPUT] [-n NEURONS] [-l LAYERS]
+usage: classifier.py [-h] [-t TITLE] [-d DESCRIPTION] [-cl CLASSIFIER] [-mp MODEL_PATH] [-tr TRAIN] [-csv CSV_OUTPUT] [-n NEURONS] [-l LAYERS] [-trs TRAIN_SIZE] [-tes TEST_SIZE]
 
 Predict genre of a movie
 
@@ -30,6 +30,10 @@ optional arguments:
                         Number of neurons in the hidden layer
   -l LAYERS, --layers LAYERS
                         Number of hidden layers
+  -trs TRAIN_SIZE, --train_size TRAIN_SIZE
+                        Train size
+  -tes TEST_SIZE, --test_size TEST_SIZE
+                        Test size
 ```
 
 ## Prediction
@@ -57,12 +61,12 @@ Entrainement du modèle via le réseau de neurones sur la base de données d'ent
 
 SVM
 ```bash
-python3 classifier.py --train true -mp "svm.sav" -cl svm
+python3 classifier.py --train true -mp "svm.sav" -cl svm -trs 0.5 -tes 0.1
 ```
 Entrainement du modèle via SVM sur la base de données d'entrainement avec test_size=0.1 et train_size=0.5 et l'enregistre dans `svm.sav`.
 
 LogisticRegression
 ```bash
-python3 classifier.py --train true -mp "logistic_regression_model.sav" -cl logistic_regression
+python3 classifier.py --train true -mp "logistic_regression_model.sav" -cl logistic_regression -tes 0.2 -trs 0.7
 ```
 Entrainement du modèle via LogisticRegression sur la base de données d'entrainement avec test_size=0.2 et train_size=0.7 et l'enregistre dans `logistic_regression.sav`.

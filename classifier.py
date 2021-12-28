@@ -29,6 +29,14 @@ stopwords_list += ['one', 'two', 'three', 'four', 'five', 'six', 'seven',
 stopwords_list += [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 stopwords_list += [x for x in string.ascii_lowercase]
 
+def print_genre():
+    df_path="archive/dataset_csv/train_data_clean.csv"
+    df = pd.read_csv(df_path)
+    genres=[]
+    for i in range(len(df["genre"])):
+        if df["genre"][i] not in genres:
+            genres.append(df["genre"][i])
+    print(genres)
 
 def clean_text(text):
     text = text.lower()
@@ -393,11 +401,19 @@ if __name__ == "__main__":
                         help="Number of neurons in the hidden layer", dest="neurons", default=100)
     parser.add_argument('-l', '--layers', type=int,
                         help="Number of hidden layers", dest="layers", default=1)
+
+    parser.add_argument('-trs', '--train_size', type=float,
+                        help="Train size", dest="train_size", default=0.5)
+    parser.add_argument('-tes', '--test_size', type=float,
+                        help="Test size", dest="test_size", default=0.1)
+    parser.add_argument('-csv_train', '--csv_train', type=str, help="CSV train file", dest="csv_train", default="archive/dataset_csv/train_data_clean.csv")
     args = parser.parse_args()
     print(args)
 
     if args.train:
-        trainer = TrainClassifier()
+        trainer = TrainClassifier(
+            df_path=args.csv_train,
+            test_size=args.test_size, train_size=args.train_size)
         if args.classifier == "neural_network":
             trainer.train(
                 classifier=MLPClassifier,
