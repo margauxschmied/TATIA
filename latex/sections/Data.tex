@@ -1,0 +1,15 @@
+\section{Data}
+
+\subsection{Base de donnée de résumé associé à leur genre de film}
+
+Pour recolter les données necessaire à l'entrainement de l'IA nous nous sommes rendu sur \href{https://www.kaggle.com/hijest/genre-classification-dataset-imdb/version/1}{kaggle.com} où nous avons recherché un DataSet varié de film associé à leur résumé et leur genre. Cependant avec une plus grosse base de donnée nous aurions eu de meilleur résultat.\\
+
+Notre base de données a été nettoyé en mettant toutes les descriptions en minuscule. Nous avons remplaçé les abréviations par leur forme développée, par exemple "what's" et "what is".
+Puis après avoir enlevé les espaces en trop nous avons tokenizer et lemmatizer chaque mot des résumés pour prendre leur racine.
+
+\subsection{Base de donnée de champ lexical par genre de film}
+Pour l’une de nos méthodes de classification nous avons eu besoin d’une base de données de champs lexicaux correspondant au genre des films que nous avons récupéré dans notre première base de données.\\
+Après plusieurs recherches nous avons réalisé que les champs lexicaux dépendaient grandement du contexte du texte donc impossible de trouver une base de données général en ligne.\\
+Nous avons donc décidé d’en créer une nous-même composé de synonyme, des mots les plus fréquents ainsi que de mot choisi arbitrairement représentant le champ lexical de chaque genre.\\
+Une fois les mots de chaque genre sélectionné ils ont subi le même traitement que pour l’autre base de données.\\
+Notre base de données a donc des défauts notamment car nous avons décidé de ne pas y faire figurer certaine catégorie. Les catégorie \textbf{documentary}, \textbf{reality-tv}, \textbf{short} et \textbf{talk-show} n'y figure pas puisqu’elles peuvent traiter de tout et n’importe quoi et ne sont donc pas discernable par un vocabulaire.

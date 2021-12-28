@@ -1,67 +1,60 @@
 import matplotlib.pyplot as plt
-from sklearn import model_selection
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.naive_bayes import GaussianNB
-from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split
-from sklearn import datasets
 import matplotlib.pyplot as plt
-from sklearn.feature_extraction.text import CountVectorizer
 import pandas as pd
-
+from sklearn import datasets
+from sklearn import model_selection
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.svm import LinearSVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.utils import shuffle
 
 df = pd.read_csv("archive/dataset_csv/train_data_clean.csv")
 
 sentences = df["description"].values
-vectorizer = CountVectorizer(min_df=0, lowercase=False)
+vectorizer = TfidfVectorizer()
 vectorizer.fit(sentences)
 vectorizer.transform(sentences)
 
-X = df.drop("Unnamed: 0", axis=1)
-X = X.drop("genre", axis=1).drop("id", axis=1).drop("title", axis=1)
 Y = df["genre"].values
 
-
-X_train, X_test, y_train, y_test = train_test_split(sentences, Y, test_size=1/3, train_size=2/3)#, random_state=50
-vectorizer = CountVectorizer()
+X_train, X_test, y_train, y_test = train_test_split(
+    sentences, Y, test_size=0.1, train_size=0.5)
+vectorizer = TfidfVectorizer()
 vectorizer.fit(X_train)
 
 X_train = vectorizer.transform(X_train)
-X_test  = vectorizer.transform(X_test)
-
-
-# X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.30)
-kfold = model_selection.KFold(n_splits=10)
-
-
-
+X_test = vectorizer.transform(X_test)
 
 models = []
 models.append(('LR', LogisticRegression()))
-models.append(('LDA', LinearDiscriminantAnalysis()))
 models.append(('KNN', KNeighborsClassifier()))
 models.append(('CART', DecisionTreeClassifier()))
-models.append(('NB', GaussianNB()))
-models.append(('SVM', SVC()))
-
+models.append(('NB', MultinomialNB()))
+models.append(('SVM', LinearSVC()))
+models.append(('MLP', MLPClassifier(hidden_layer_sizes=(10,))))
 
 results = []
 names = []
 scoring = 'accuracy'
 for name, model in models:
-    kfold = model_selection.KFold(n_splits=10)
-    cv_results = model_selection.cross_val_score(model, X_train, y_train, cv=kfold, scoring=scoring)
-    results.append(cv_results)
+    print(f"Testing with {name}...")
+    kfold = model_selection.KFold(n_splits=8)
+    cv_results = model_selection.cross_val_score(
+        model, X_train, y_train, scoring=scoring, n_jobs=-1, verbose=1, cv=kfold) * 100
+    mean = cv_results.mean()
+    results.append(mean)
     names.append(name)
-    msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
+    msg = "%s: %f (%f)" % (name, mean, cv_results.std())
     print(msg)
 
-fig = plt.figure(figsize=(10,10))
-fig.suptitle('How to compare sklearn classification algorithms')
-ax = fig.add_subplot(111)
-plt.boxplot(results)
-ax.set_xticklabels(names)
+plt.title('How to compare sklearn classification algorithms')
+plt.bar(names, results, width=0.7, color=plt.get_cmap(
+    'Paired').colors, edgecolor='k', linewidth=2)
+plt.xlabel("Classifier")
+plt.ylabel("Accuracy (%)")
 plt.savefig("compare_classifier.png")
