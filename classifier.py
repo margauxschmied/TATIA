@@ -119,7 +119,7 @@ class TrainClassifier(object):
         save_model(dict(classifier=self.classifier, vectorizer=self.vectorizer),
                    model_path)
 
-        score = self.classifier.score(X_test, y_test)
+        score = self.classifier.score(X_test, y_test) * 100
         print(f"Trained with {score:.3f}% accuracy")
         metrics.ConfusionMatrixDisplay.from_estimator(
             self.classifier, X_test, y_test, labels=self.df["genre"].unique(), include_values=False, xticks_rotation=90)
@@ -371,6 +371,7 @@ def predict(output, df_to_predict, classifier_method="neural_network", sampling=
     # predictError(df2)
     df2.to_csv(output)
     print(f"Prediction done and saved in {output}")
+    print(f"Classifier {classifier} prediction for {df_to_predict['title'].values} is {classified}")
 
 
 def convert_string_to_dataset_prediction(title, description):
@@ -378,11 +379,6 @@ def convert_string_to_dataset_prediction(title, description):
 
 
 if __name__ == "__main__":
-    # df_to_predict=convert_string_to_dataset_prediction("Dune", "The story of Paul Atreides, a young man as gifted as he was brilliant, destined to meet an extraordinary destiny that totally surpasses him. Because if he wants to preserve the future of his family and his people, he will have to go to the most dangerous planet in the universe - the only one able to provide the most precious resource in the world, capable of multiplying tenfold. power of mankind. As evil forces vie for control of this planet, only those who manage to overcome their fear will be able to survive ...")
-
-    # predict("predictions/dune-predictions.csv", df_to_predict=df_to_predict, classifier_method="svm", model_path="models/svm.sav")
-
-    # sys.exit(0)
     parser = argparse.ArgumentParser(description='Predict genre of a movie')
     parser.add_argument('-t', '--title', type=str,
                         help="Title of the movie", dest="title", default="")

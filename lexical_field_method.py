@@ -44,7 +44,7 @@ def get_similarities_counter(df, text):
 
 
 df = pd.read_csv("archive/lexical_field_clean.csv")
-clean_lexical(df)
+#clean_lexical(df)
 data = pd.read_csv("archive/dataset_csv/test_data_solution.csv")
 
 sentences = data["description"].values

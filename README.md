@@ -8,7 +8,8 @@ Pour obtenir de l’aide :
 
 ```bash
 $ python3 classifier.py -h
-usage: classifier.py [-h] [-t TITLE] [-d DESCRIPTION] [-cl CLASSIFIER] [-mp MODEL_PATH] [-tr TRAIN] [-csv CSV_OUTPUT] [-n NEURONS] [-l LAYERS] [-trs TRAIN_SIZE] [-tes TEST_SIZE]
+usage: classifier.py [-h] [-t TITLE] [-d DESCRIPTION] [-cl CLASSIFIER] [-mp MODEL_PATH] [-tr TRAIN] [-csv CSV_OUTPUT] [-n NEURONS] [-l LAYERS] [-trs TRAIN_SIZE]
+                     [-tes TEST_SIZE] [-csv_train CSV_TRAIN]
 
 Predict genre of a movie
 
@@ -34,6 +35,8 @@ optional arguments:
                         Train size
   -tes TEST_SIZE, --test_size TEST_SIZE
                         Test size
+  -csv_train CSV_TRAIN, --csv_train CSV_TRAIN
+                        CSV train file
 ```
 
 ## Prediction
