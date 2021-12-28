@@ -1,0 +1,37 @@
+\newpage
+\section{Comment utiliser}
+
+Il y a deux possibilités pour lancer le programme soit avec Jupyter ou en ligne de commande. Jupyter n'est là que pour prédire un exemple avec les modèles existant et ne pourra pas entrainer un modèle. Si vous souhaitez tester un film différent avec un modèle différent ou entrainer un modèle avec des paramètres plus précis il faudra passer par les lignes de commandes dans le terminal. \\ 
+
+Pour plus d'informations allez sur le \href{https://github.com/margauxschmied/TATIA/blob/main/README.md}{README.md} du projet ou faite la commande: \\
+\textbf{python3 classifier.py -h}
+
+\subsection{Prédiction avec modèle préexistant}
+
+Par exemple si l'on veut prédire le genre du film Dune vous pouvez le faire avec la commande ci-dessous: \\
+
+Input: \\
+\textbf{python3 classifier.py -cl svm -mp models/svm.sav -t "Dune" -d "The story of Paul Atreides, a young man as gifted as he was brilliant, destined to meet an extraordinary destiny that totally surpasses him. Because if he wants to preserve the future of his family and his people, he will have to go to the most dangerous planet in the universe - the only one able to provide the most precious resource in the world, capable of multiplying tenfold. power of mankind. As evil forces vie for control of this planet, only those who manage to overcome their fear will be able to survive ..." -csv dune\_predicted.csv} \\
+
+Output: 
+\bash[script,stdout]
+Predicting with LinearSVC()...
+Prediction done and saved in dune_predicted.csv
+Classifier LinearSVC() prediction for ['Dune'] is [' sci-fi ']
+\END
+
+
+
+\subsection{Apprentissage}
+
+Si l'on souhaite entrainer un modèle nous pouvons utiliser la commande ci-dessous: \\
+
+Input: \\
+\textbf{python3 classifier.py --train true -mp "svm.sav" -cl svm -trs 0.5 -tes 0.1} \\
+
+Output:
+\bash[script,stdout]
+Start training with <class 'sklearn.svm._classes.LinearSVC'>...
+svm.sav saved
+Trained with 57.064% accuracy
+\END
