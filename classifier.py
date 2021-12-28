@@ -11,6 +11,7 @@ import nltk
 nltk.download('stopwords')
 nltk.download('wordnet')
 nltk.download('omw-1.4')
+nltk.download('punkt')
 
 import pandas as pd
 from matplotlib import pyplot as plt
