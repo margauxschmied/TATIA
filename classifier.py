@@ -7,6 +7,11 @@ import warnings
 
 import matplotlib.pyplot as plt
 import nltk
+
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('omw-1.4')
+
 import pandas as pd
 from matplotlib import pyplot as plt
 from nltk.corpus import stopwords
